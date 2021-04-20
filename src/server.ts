@@ -11,7 +11,7 @@ app.use("/highlight.js", express.static(path.join(rootPath, "node_modules/highli
 app.use("/", express.static(path.join(rootPath, "public")))
 routes.forEach(route => app.use("/", route))
 
-let port = parseInt(process.env.PORT || '8777');
+let port = parseInt(process.env.PORT || '8779');
 app.set('port', port);
 let server = http.createServer(app)
 server.listen(port);
