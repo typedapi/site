@@ -1,0 +1,198 @@
+{% extends "./layout.html" %}
+{% block content %}
+<div class="section no-pad-bot" id="index-banner">
+    <div class="container">
+        <h1 class="header center orange-text">Getting started</h1>
+    </div>
+</div>
+
+<div class="container main-code-sample-container">
+    <div class="section">
+        <div class="row">
+            <div class="col s12 text-column">
+                <h4>Required environment</h4>
+                <p>
+                    You need <a href="https://nodejs.org/">NodeJS 10+</a> to be installed
+                </p>
+                <h4>Working samples</h4>
+                <ul class="collection">
+                    <li class="collection-item">
+                        <a href="https://github.com/typedapi/hello-world">Hello, world!</a>
+                        - very simple client-server application that send request to server and return response
+                    </li>
+                    <li class="collection-item">
+                        <a href="https://github.com/typedapi/chat-demo">Chat demo</a>
+                        - simple chat demo with events
+                    </li>
+                </ul>                     
+                <h4>How to prepare server for TypedAPI</h4>
+                {% highlightjs "bash" %}
+                    # install typedapi libraries with websocket library
+                    npm install --save typedapi-core typedapi-server typedapi-server-ws
+                    # install typedapi parser for dev
+                    npm install --save-dev typedapi-parser
+                {% endhighlightjs %}
+                <p>
+                    Then you need to create Api object anywhere in server directory.
+                    <br/>For "<a href="https://github.com/typedapi/hello-world">Hello, world!</a>" application it will be looks like:
+                </p>
+                {% highlightjs "typescript" %}
+                    export class Api {
+                        async hello(name: string): Promise<string> {
+                            return `Hello, ${name}!`
+                        }
+                    }                
+                {% endhighlightjs %}
+                <p>Api object can contain:</p>                    
+                <ul class="collection">
+                    <li class="collection-item">Methods that return Promises</li>
+                    <li class="collection-item">Events objects</li>
+                    <li class="collection-item">Child objects with same contents</li>
+                  </ul>                
+                <h4>How to prepare client</h4>
+                {% highlightjs "bash" %}
+                    # install typedapi libraries with websocket support
+                    npm install --save typedapi-core typedapi-client typedapi-client-browser-ws                    
+                {% endhighlightjs %}
+                <h4>Generate API reflections</h4>
+                <p>
+                    TypedAPI need api reflections for validation purposes.
+                    When creating reflection, it will automatically generate reflections file
+                    for client and server. For client will be also generated API interface.
+                </p>
+                <p>
+                    To run generator, you should call typedapi-parse from server directory.
+                    It will be in ./node_modules/.bin directory.
+                    typedapi-parse command receive parameters: 
+                </p>
+                {% highlightjs "bash" %}
+                    typedapi-parse [sourceFilename] [sourceObjectName] [outFilename] [reflectionOutFileName]
+                {% endhighlightjs %}                
+                <p>
+                    Where:
+                </p>
+                <ul class="collection">
+                    <li class="collection-item"><b>sourceFilename</b>: Path to file where your Api object</li>
+                    <li class="collection-item"><b>sourceObjectName</b>: Class name in file (ex Api, Backend, MyCompanyApi etc)</li>
+                    <li class="collection-item"><b>outFilename</b>: Ouput file name for client where will be interface, reflection, and Api factory</li>
+                    <li class="collection-item"><b>reflectionOutFileName</b>: Ouput file name for server where will be stored Api reflection</li>
+                </ul>                         
+                <p>For example, you can run:</p>
+                {% highlightjs "bash" %}
+                    ./node_modules/.bin/typedapi-parse Api.ts Api ../client/apiReflection.ts apiReflection.ts           
+                {% endhighlightjs %}        
+                <p>You also can add command to package.json file:</p>                        
+                {% highlightjs "json" %}
+                    {
+                        "scripts": {
+                            parseApi: "typedapi-parse Api.ts Api ../client/apiReflection.ts apiReflection.ts"
+                        }
+                    }                    
+                {% endhighlightjs %}                        
+                <p>And run it like:</p>     
+                {% highlightjs "bash" %}
+                    npm run parseApi
+                {% endhighlightjs %}   
+                <h4>How to run server</h4>                                        
+                <p>Example script how to run server:</p>
+                {% highlightjs "typescript" %}
+                    import { WebSocketServer } from "typedapi-server-ws"
+                    import { buildMap } from "typedapi-server"
+                    // Reflection generated using typedapi-parse
+                    import { reflection } from "./apiReflection"
+                    // Your Api object
+                    import { Api } from "./Api"
+                    
+                    new WebSocketServer({
+                        apiMap: buildMap(reflection, new Api),
+                        port: 8090
+                    })
+                {% endhighlightjs %}                           
+                <h4>How to connect client</h4>          
+                <p>Example script how to connect client to server:</p>             
+                {% highlightjs "typescript" %}
+                    // Import TypedAPI libraries
+                    import { WebSocketTransport } from "typedapi-client-browser-ws"
+                    // Reflection generated using typedapi-parse
+                    import { createClient } from "./apiReflection"                    
+                    
+                    const api = createClient({ transport })
+
+                    // And then you can run your API Methods
+                    let result = await api.hello(name)
+                {% endhighlightjs %}      
+                <h4>Authorization</h4>
+                <p>
+                    To implement users authorization in your project you should realize method that return AuthDataResponse<br/>
+                    Interface AuthDataResponse:
+                </p>
+                {% highlightjs "typescript" %} 
+                    export type AuthDataResponse = {
+                        newAuthData: {
+                            id?: string | number
+                            groups?: string[]
+                            name?: string
+                            email?: string
+                            phone?: string
+                        }
+                        // response value will be return to user,
+                        // newAuthData will be removed and used only for internal usage
+                        response: boolean
+                    }                
+                {% endhighlightjs %}      
+                <p>Example of Api that implement users` authorization.</p>
+                {% highlightjs "typescript" %}            
+                    import { AuthDataResponse } from "typedapi-server"                 
+
+                    export class ClientApi {
+
+                        /**
+                         * This method check user`s name and password, and, if success, it return user`s id and groupd.                         
+                         * That data will be stored in user`s connection data and will be passwed to methods when need.
+                         **/
+                        async login(username: string, password: string): Promise<AuthDataResponse> {
+                            let user = await usersRepository.login(username, password)
+                            if(!user) {
+                                return {
+                                    response: false,
+                                    newAuthData: {}
+                                }
+                            } else {
+                                return {
+                                    response: true,
+                                    newAuthData: {
+                                        id: user.id,
+                                        groups: user.groups
+                                    }
+                                }
+                            }
+                        }
+
+                        /**
+                         * Logout and return empty auth data
+                         **/
+                        async logout(): Promise<AuthDataResponse> {
+                            return {
+                                response: true,
+                                newAuthData: {}
+                            }                            
+                        }
+
+                        /**
+                         * ApiUserID will be atumatically injected by user`s auth data.                        
+                         * If user not authorized, he will receive NotAuthorizedError 
+                         **/                        
+                        async getUserData(apiUserId: number): Promise<SomeUserData> {
+                            let userData = await usersRespotory.getUserData(apiUserId)
+                            return userData
+                        }
+                    }
+                {% endhighlightjs %}                     
+                <br/><br/>
+                <p>For more information see <a href="/docs">Docs</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

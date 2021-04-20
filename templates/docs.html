@@ -1,0 +1,650 @@
+{% extends "./layout.html" %}
+{% block content %}
+<div class="section no-pad-bot" id="index-banner">
+    <div class="container">
+        <h1 class="header center orange-text">Docs</h1>
+    </div>
+</div>
+<div class="container main-code-sample-container">
+    <div class="section">
+        <div class="row">
+            <div class="col l3 m12">
+                <h4>Contents</h4>
+                <ul class="docs-contents">
+                    <li><a href="#introduction">Introduction</a></li>
+                    <li><a href="#installation">Installation</a></li>
+                    <li><a href="#libraries">Libraries</a></li>
+                    <li><a href="#api-class">API Class</a></li>
+                    <li><a href="#methods">Methods</a></li>
+                    <li><a href="#events">Events</a></li>
+                    <li><a href="#parametric-events">Parametric events</a></li>                    
+                    <li><a href="#autorization">Authorization</a></li>
+                    <li><a href="#websocket-connection">WebSocket connection</a></li>
+                    <li><a href="#http-connection">HTTP connection</a></li>
+                    <li><a href="#api-map">Api map</a></li>
+                    <li><a href="#logging">Logging</a></li>
+                    <li><a href="#microservices">Using in microservices</a></li>
+                    <li><a href="#errors">Errors handling</a></li>
+                    <li><a href="#decorators">Decorators</a></li>
+                </ul>
+            </div>            
+            <div class="col l9 m12 text-column">                
+                <h4 id="introduction">Introduction</h4>
+                <p>
+                    TypedAPI is set of libraries for creating client-server APIs for applications written in typescript. 
+                    You describe API like ordinar class with only methods that return Promise. 
+                    Then parser will create interface based on that class. 
+                    Interface will be used by client`s application. 
+                    Then you only need to configure connectors (HTTP and WebSocket available). 
+                    Also API class can contain Events (HTTP connector will use HTTP polling) and child classes. 
+                </p>
+                <h4 id="installation">Installation</h4>
+                <p>
+                    There is serveral libraries of TypedAPI and you install them depends on what result you need.</b>
+                </p>
+                <table class="striped">
+                    <thead>
+                        <tr>
+                            <th>Target</th>
+                            <th>Server</th>
+                            <th>Client (browser)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                Core
+                            </td>                            
+                            <td>
+                                <a href="https://github.com/typedapi/typedapi/tree/master/core">typedapi-core</a><br/>
+                                <a href="https://github.com/typedapi/typedapi/tree/master/server">typedapi-server</a><br/>
+                                <a href="https://github.com/typedapi/typedapi/tree/master/parser">typedapi-parser</a> (in --dev mode)
+                            </td>
+                            <td>
+                                <a href="https://github.com/typedapi/typedapi/tree/master/core">typedapi-core</a><br/>
+                                <a href="https://github.com/typedapi/typedapi/tree/master/client">typedapi-client</a>
+                            </td>                            
+                        </tr>
+                        <tr>
+                            <td>
+                                WebSocket
+                            </td>
+                            <td>
+                                <a href="https://github.com/typedapi/typedapi/tree/master/server-ws">typedapi-server-ws</a>
+                            </td>
+                            <td>
+                                <a href="https://github.com/typedapi/typedapi/tree/master/client-browser-ws">typedapi-client-browser-ws</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                HTTP
+                            </td>
+                            <td>
+                                -
+                            </td>
+                            <td>
+                                <a href="https://github.com/typedapi/typedapi/tree/master/client-browser-http">typedapi-client-browser-http</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p>If you want to install TypedAPI with Websocket support, you should run</p>
+                {% highlightjs "bash" %}
+                    # for server
+                    npm install --save typedapi-core typedapi-server typedapi-server-ws
+                    npm install --save-dev typedapi-parser
+                    # for client
+                    npm install --save typedapi-core typedapi-client typedapi-client-browser-ws
+                {% endhighlightjs %}                   
+                <p>For installation with HTTP support, run:</p>
+                {% highlightjs "bash" %}
+                    # for server
+                    npm install --save typedapi-core typedapi-server
+                    npm install --save-dev typedapi-parser
+                    # for client
+                    npm install --save typedapi-core typedapi-client typedapi-client-browser-http
+                {% endhighlightjs %}                                   
+                <h4 id="api-class">API Class</h4>
+                <p>
+                    To describe API you only need to create TypeScript class with some conditions:
+                </p>
+                <ul class="collection">
+                    <li class="collection-item">
+                        All methods should return Promises
+                    </li>
+                    <li class="collection-item">
+                        Types of data, that can be received and returned by API:<br/>
+                        - Scalar types: number, string, boolean, Date, undefined, null;<br/>
+                        - Complex types: Array, Tuple, Enum, Union. Complex types can contain only types describerd here;<br/>
+                        - Object without methods;<br/>
+                        - Indexed object: { [key: string | number]: SomeOtherType };<br/>
+                        <br/>
+                        All types should be strongly typed: any|unknown not allowed.
+                    </li>
+                    <li class="collection-item">
+                        Api class can contain child classes with same conditions.
+                    </li>
+                    <li class="collection-item">
+                        Api class also can contain <a href="#events">Events</a> and <a href="#parametric-events">Parametric Events</a> objects.
+                    </li>
+                    <li class="collection-item">
+                        Api class can use some injections for <a href="#authorization">Authorization</a>
+                    </li>
+                </ul>     
+                <p>Sample of abstract books API:</p>                   
+                {% highlightjs "typescript" %}
+                    // Main api class
+                    export class Api {
+                        books = new BooksApi
+                    }                    
+
+                    // Sample books api class that use some yours repository
+                    export class BooksApi {
+
+                        get(id: number): Promise<BookResult> {
+                            return repository.get(id)
+                        }
+
+                        async create(createBookData: CreateBook): Promise<BookResult> {
+                            const bookResult = await repository.createBook(createBookData)
+                            this.onCreate.fire(bookResult)
+                        }
+
+                        async update(id: number, data: UpdateBook): Promise<void> {
+                            const bookResult = await repository.updateBook(id, data)
+                            this.onUpdate.fire(bookResult)
+                        }
+
+                        async remove(id: number): Promise<void> {
+                            await repository.deleteBook(id)
+                            this.onDelete.fire(id)
+                        } 
+                        
+                        onCreate = new Event<BookResult>()
+                        onUpdate = new Event<BookResult>()
+                        onDelete = new Event<number>()
+                    }
+
+                    // Interfaces of data
+                    export interface BookResult {
+                        id: number
+                        title: string
+                        description: string
+                    }
+
+                    export interface UpdateBook {
+                        title?: string
+                        description?: string
+                    }
+
+                    export interface CreateBook {
+                        title: string
+                        description: string
+                    }                            
+                {% endhighlightjs %}
+                <h4 id="geninterface">Generate interface</h4>                
+                <p>
+                    To use API on client you shoud generate api interface and reflections. It can be done using typedapi-parse binary.
+                </p>
+                <p>
+                    To run generator, you should call typedapi-parse from server directory.
+                    It will be in ./node_modules/.bin directory.
+                    typedapi-parse command receive parameters: 
+                </p>
+                {% highlightjs "bash" %}
+                    typedapi-parse [sourceFilename] [sourceObjectName] [outFilename] [reflectionOutFileName]
+                {% endhighlightjs %}                
+                <p>
+                    Where:
+                </p>
+                <ul class="collection">
+                    <li class="collection-item"><b>sourceFilename</b>: Path to file where your Api object</li>
+                    <li class="collection-item"><b>sourceObjectName</b>: Class name in file (ex Api, Backend, MyCompanyApi etc)</li>
+                    <li class="collection-item"><b>outFilename</b>: Ouput file name for client where will be interface, reflection, and Api factory</li>
+                    <li class="collection-item"><b>reflectionOutFileName</b>: Ouput file name for server where will be stored Api reflection</li>
+                </ul>                         
+                <p>For example, you can run:</p>
+                {% highlightjs "bash" %}
+                    ./node_modules/.bin/typedapi-parse Api.ts Api ../client/apiReflection.ts apiReflection.ts           
+                {% endhighlightjs %}        
+                <p>Also you can run generator from code:</p>                   
+                {% highlightjs "typescript" %}
+                    import { build } from "typedapi-parser"
+
+                    build({
+                        sourceFilename: "Api.ts",
+                        sourceObjectName: "Api",
+                        outFilename: "../client/apiReflection.ts",
+                        reflectionOutFileName: "apiReflection.ts",
+                    })
+                {% endhighlightjs %}     
+                <h4 id="websocket-connection">Setup WebSocket connection</h4>
+                <p>Sample for server:</p>
+                {% highlightjs "typescript" %}
+                    import { WebSocketServer } from "typedapi-server-ws"
+                    import { buildMap } from "typedapi-server"
+                    // Reflection generated using typedapi-parse
+                    import { reflection } from "./apiReflection"
+                    // Your Api object
+                    import { Api } from "./Api"
+                    
+                    new WebSocketServer({
+                        apiMap: buildMap(reflection, new Api),
+                        port: 8090
+                    })
+                {% endhighlightjs %}   
+                <p>Sample for client:</p>                
+                {% highlightjs "typescript" %}
+                    // Import TypedAPI libraries
+                    import { WebSocketTransport } from "typedapi-client-browser-ws"
+                    // Reflection generated using typedapi-parse
+                    import { createClient } from "./apiReflection"
+                    const api = createClient({ transport })
+
+                    // And then you can run your API Methods
+                    let result = await api.hello(name)
+                {% endhighlightjs %}                
+                <h4 id="http-connection">Setup HTTP connection</h4>
+                <p>Sample for server:</p>
+                {% highlightjs "typescript" %}
+                    import { HttpServer, buildMap } from "typedapi-server"
+                    import { buildMap } from "typedapi-server"
+                    import * as http from "http"
+                    // Reflection generated using typedapi-parse
+                    import { reflection } from "./apiReflection"
+                    // Your Api object
+                    import { Api } from "./Api"
+                    
+                    // Create TypedAPI HTTP server
+                    const apiHttpServer = new HttpServer({
+                        apiMap: buildMap(reflection, new Api)
+                    })
+
+                    // Handle HTTP request using stadart http module from NodeJS
+                    const server = http.createServer(function (request, response) {
+                        apiHttpServer.handleRequest(request, response)
+                    })
+                {% endhighlightjs %}   
+                <p>Sample for client:</p>                
+                {% highlightjs "typescript" %}
+                    // Import TypedAPI libraries
+                    import { HttpTransport } from "typedapi-client-browser-http"
+                    // Reflection generated using typedapi-parse
+                    import { createClient } from "./apiReflection"
+                    const api = createClient({ transport })
+
+                    // And then you can run your API Methods
+                    let result = await api.hello(name)
+                {% endhighlightjs %}                
+                <h4 id="events">Events</h4>
+                <p>Realisation of Events in TypedAPI is very simple. On server:</p>
+                {% highlightjs "typescript" %}
+                    import { Event } from "typedapi-server"
+                    // Describe event data
+                    interface SomeEventData {
+                        someString: string,
+                        someNumber: number
+                    }
+                    // Include it to API class
+                    export class Api {
+                        someEvent = new SomeEvent<SomeEventData>
+                    }
+
+                    // How to fire event
+                    const data: SomeEventData = { someString: "string", someNumber: 123 }
+                    // To all subscribers
+                    api.someEvent.fire(data)
+                    // To single user
+                    api.someEvent.fireForUser(data, userId)
+                    // To group
+                    api.someEvent.fireForGroup(data, groupName)
+                    // To user with specific session
+                    api.someEvent.fireForSession(data, sessionId)
+                    // To specific connection
+                    api.someEvent.fireForConnection(data, connectionId)                    
+                {% endhighlightjs %}
+                <p>On client:</p>
+                {% highlightjs "typescript" %}
+                    // Subscribe to event
+                    const subscription = await api.someEvent.subscribe(data => {
+                        // code to hadle event data
+                    })
+                    // Unsubscribe from event
+                    await subscription.unsubscribe()
+                {% endhighlightjs %}
+                <p>HTTP connection will use HTTP polling for handling events</p>
+                <h4 id="parametric-events">Parametric events</h4>
+                <p>
+                    Parametric event is more complex event, when subscription have some parameters,
+                    that will be used to check if we need to send specific event for specific connection.<br/>
+                    ParametricEvent is generic class that recive 3 type variables:
+                </p>
+                <ul class="collection">
+                    <li class="collection-item"><b>DATA</b>: type of data that will be sent to client</li>
+                    <li class="collection-item"><b>SUBSCRIPTION_PARAMETERS</b>: type of parameters that client whould use to subscribe</li>
+                    <li class="collection-item"><b>EVENT_PARAMETERS</b>: type of event parameters that will be passed to parametric event comparer</li>
+                </ul>                    
+                <p>Also ParametricEvent have 2 constructor parameters</p>
+                <ul class="collection">
+                    <li class="collection-item"><b>comparer</b>: Comparer method to check if event should fire for current cubscription</li>
+                    <li class="collection-item"><b>validator</b> (optional): Validator method to check if curren user can subscribe to event with such parameters</li>          
+                </ul>                 
+                <p>In result, public interface of ParametricEvent:</p>
+                {% highlightjs "typescript" %}
+                    export class ParametricEvent<DATA, SUBSCRIPTION_PARAMETERS, EVENT_PARAMETERS> {
+                        constructor(
+                            public comparer: ParametricComparer<DATA, SUBSCRIPTION_PARAMETERS, EVENT_PARAMETERS>,
+                            public validator?: SubscriptionValidator<SUBSCRIPTION_PARAMETERS>,
+                        );
+
+                        fire(data: DATA, eventParameters: EVENT_PARAMETERS): void;
+                    }
+
+                    // Type of comparer method:
+                    export type ParametricComparer<DATA, SUBSCRIPTION_PARAMETERS, EVENT_PARAMETERS> = {
+                        (subscriptionParameters: SUBSCRIPTION_PARAMETERS, data: DATA, eventParameters: EVENT_PARAMETERS): boolean
+                    }
+
+                    // Type of subscription validator method:
+                    export type SubscriptionValidator<SUBSCRIPTION_PARAMETERS> = {
+                        (subscriptionParameters: SUBSCRIPTION_PARAMETERS, authData: AuthData): Promise<true | string>
+                    }                    
+                {% endhighlightjs %}           
+                <p>For example, in our abstract books API we want subscribe to event when specific Book changed:</p>     
+                {% highlightjs "typescript" %}
+                    import { ParametricEvent } from "typedapi-server"
+
+                    // Data of book
+                    interface BookData {
+                        id: number
+                        title: string
+                        description: string
+                    }
+
+                    // Api class with event
+                    export class Api {
+                        onBookChanged = new ParametricEvent<BookData,number,number>((data, subParams, eventParams) => {
+                            return subParams === eventParams
+                        })
+                    }
+
+                    // How to fire event on server
+                    const eventData: BookData = {
+                        id: 10, 
+                        title: "Book title", 
+                        description: "Book description"
+                    }
+                    api.onBookChanged.fire(eventData, eventData.id)
+                {% endhighlightjs %}  
+                <p>
+                    When creating event object, we passing 3 type variables: <br/>
+                    <b>BookData</b> - event data that will be passed to client.<br/>
+                    <b>number</b> - subscription parameter, wi will subscribe to book by it id.<br/>
+                    <b>number</b> - event parameter, when firing event, wi will pass book id here.
+                </p>         
+                <p>How to process event on client:</p>
+                {% highlightjs "typescript" %}
+                    // subscribe to event
+                    const subscription = await api.onBookChanged.subscribe(bookData => {
+                        // process bookData
+                    }, 10) // <== here book id passed
+
+                    //unsubscribe from event
+                    await subscription.unsibscribe()
+                {% endhighlightjs %}          
+                <h4 id="authorization">Authorization</h4>
+                <p>
+                    To implement user`s authorization:<br/>
+                    1. Realize SessionProvider object that implements <a href="https://github.com/typedapi/typedapi/blob/master/server/src/session.ts">SessionProviderInterface</a>.
+                    By default server users MemorySessionProvider that working, but will be reset on application restart.
+                    Then add your provider to server configuration.
+                    <br/>
+                    2. Add to API methods that return AuthDataResponse.<br/>
+                </p>
+                {% highlightjs "typescript" %} 
+                export type AuthDataResponse = {
+                    newAuthData: {
+                        id?: string | number
+                        groups?: string[]
+                        name?: string
+                        email?: string
+                        phone?: string
+                    }
+                    // response value will be return to user,
+                    // newAuthData will be removed and used only for internal usage
+                    response: boolean
+                }                
+                {% endhighlightjs %}      
+                <p>Example of Api that implement users` authorization.</p>
+                {% highlightjs "typescript" %}            
+                    import { AuthDataResponse } from "typedapi-server"                 
+
+                    export class ClientApi {
+
+                        /**
+                        * This method check user`s name and password, and, if success, it return user`s id and groupd.                         
+                        * That data will be stored in user`s connection data and will be passwed to methods when need.
+                        **/
+                        async login(username: string, password: string): Promise<AuthDataResponse> {
+                            let user = await usersRepository.login(username, password)
+                            if(!user) {
+                                return {
+                                    response: false,
+                                    newAuthData: {}
+                                }
+                            } else {
+                                return {
+                                    response: true,
+                                    newAuthData: {
+                                        id: user.id,
+                                        groups: user.groups
+                                    }
+                                }
+                            }
+                        }
+
+                        /**
+                        * Logout and return empty auth data
+                        **/
+                        async logout(): Promise<AuthDataResponse> {
+                            return {
+                                response: true,
+                                newAuthData: {}
+                            }                            
+                        }
+
+                        /**
+                        * ApiUserID will be atumatically injected by user`s auth data.                        
+                        * If user not authorized, he will receive NotAuthorizedError 
+                        **/                        
+                        async getUserData(apiUserId: number): Promise<SomeUserData> {
+                            let userData = await usersRespotory.getUserData(apiUserId)
+                            return userData
+                        }
+                    }
+                {% endhighlightjs %}                 
+                <h4 id="api-map">Api map</h4>
+                <p>
+                    <a href="https://github.com/typedapi/typedapi/blob/master/server/src/ApiMap.ts">Api map</a> 
+                    is obect that comress all methods and events to Maps for fast access.
+                    To create apiMap use <a href="https://github.com/typedapi/typedapi/blob/master/server/src/buildMap.ts">buildMap</a> method.<br/>
+                    Example how to create Api map:
+                </p>
+
+                {% highlightjs "typescript" %}
+                    import { WebSocketServer } from "typedapi-server-ws"
+                    import { buildMap } from "typedapi-server"
+                    // Reflection generated using typedapi-parse
+                    import { reflection } from "./apiReflection"
+                    // Your Api object
+                    import { Api } from "./Api"
+                    
+                    // creating api map
+                    const api = new Api
+                    const apiMap = buildMap(reflection, api)
+
+                    // Passing api map to websocket server
+                    new WebSocketServer({
+                        apiMap: apiMap,
+                        port: 8090
+                    })
+                {% endhighlightjs %}                  
+
+                <h4 id="logging">Logging</h4>
+                <p>
+                    By default TypedAPI use <a href="https://github.com/typedapi/typedapi/blob/master/server/src/log.ts">ConsoleLogger</a>
+                    and log all data to console. You can implement own logger, pass it to server configuration and save logs anywhere you want.<br/>
+                    Logger should implement interface: 
+
+                    {% highlightjs "typescript" %}
+                        export interface LoggerInterface {
+                            methodCall(method: string, ms: number, input: unknown, output: unknown, connectionData: ConnectionData): void
+                            clientError(method: string, input: unknown, error: string, connectionData: ConnectionData): void
+                            serverError(method: string, input: unknown, error: string, connectionData: ConnectionData): void
+                            event(event: string, data: unknown, connectionData?: ConnectionData): void
+                            status(data: LoggerServerStatusData): void
+                        }
+                    {% endhighlightjs %}  
+                </p>
+
+                <h4 id="microservices">Microservices</h4>
+                <p>                    
+                    The idea how to implement mocroservice architecture in TypedAPI project is to create
+                    Api instance on each node and configure each service for hadling specified methods, or to fire specified errors.<br/>
+                    Instruments to achieve that:
+                </p>                
+                <ul class="collection">
+                    <li class="collection-item">
+                        <a href="https://github.com/typedapi/typedapi/blob/master/server/src/http/HttpProxyClient.ts">HttpProxyClient</a> - 
+                        Class that proxy methods from entrance API to other service
+                    </li>
+                    <li class="collection-item">
+                        <a href="https://github.com/typedapi/typedapi/blob/master/server/src/http/HttpTrustServer.ts">HttpTrustServer</a> - 
+                        Class that receive request from HttpProxyClient and call requested method
+                    </li>
+                    <li class="collection-item">
+                        <a href="https://github.com/typedapi/typedapi/blob/master/redis-signaling/src/RedisPublisher.ts">RedisPublisher</a> - 
+                        Class that connect to api, listen for events, and send it to Redis server
+                    </li>
+                    <li class="collection-item">
+                        <a href="https://github.com/typedapi/typedapi/blob/master/redis-signaling/src/RedisSubscriber.ts">RedisSubscriber</a> - 
+                        That class listen events from redis and send event to customer
+                    </li>
+                </ul>  
+                <p>
+                    To use RedisPublisher and RedisSubscriber you need to install another one library:
+                </p>
+                {% highlightjs "bash" %}
+                    npm install --save typedapi-redis-signaling
+                {% endhighlightjs %}                    
+                <p>
+                    For example, lets create sample API that will have two methods and one event. 
+                </p>
+                {% highlightjs "typescript" %}
+                    import { Event } from "typedapi-server"
+                    export class Api {
+                        async method1() {
+                            // do something
+                        }
+                        async method2() {
+                            // do something
+                        }
+                        event = new Event<string>()
+                    }
+                {% endhighlightjs %}                       
+                <p>
+                    Then we will create 3 services:<br/>
+                    1. Entrance Api server, it will process method2<br/>
+                    2. Service for handling method1<br/>
+                    3. Service that will not handle methods, but sometime it will fire event.<br/>
+                    Architecture will look like:
+                </p>
+                <img src="/microservices-picture.jpg" class="docs-picture"/>
+                <p>
+                    Then in project wee ned to craete 3 files for each service. Lets name them node{1-3}
+                </p>
+                <p><b>node1.ts</b> - entrance API server</p>
+                {% highlightjs "typescript" %}
+                    import { WebSocketServer } from "typedapi-server-ws"
+                    import { buildMap, HttpProxyClient } from "typedapi-server"
+                    import { RedisSubscriber } from "typedapi-redis-signaling"
+                    // Reflection generated using typedapi-parse
+                    import { reflection } from "./apiReflection"
+                    // Your Api object
+                    import { Api } from "./Api"
+                    
+                    // creating api map
+                    const api = new Api
+                    const apiMap = buildMap(reflection, api)
+
+                    // Passing api map to websocket server
+                    new WebSocketServer({
+                        apiMap: apiMap,
+                        port: 8090
+                    })
+
+                    // Server created, now wee ned to configure methods proxy
+                    new HttpProxyClient({
+                        apiMap: apiMap, // api map, proxy client will replace methods with own controller
+                        host: "192.168.0.10", // host of remote node
+                        port: 0000, // port of remote node,
+                        methodsPattern: "method1" // we need to proxy only method1
+                    })
+                    
+                    // Then wee need to configure RedisSubscriber to receive events from other nodes
+                    new RedisSubscriber({
+                        apiMap: apiMap,
+                        channel: "my-channel", // name of channel that will be listen to.
+                    })
+                {% endhighlightjs %}   
+                <p><b>node2.ts</b> - entrance API server</p>
+                {% highlightjs "typescript" %}
+                    import { buildMap, HttpTrustServer } from "typedapi-server"
+                    // Reflection generated using typedapi-parse
+                    import { reflection } from "./apiReflection"
+                    // Your Api object
+                    import { Api } from "./Api"
+                    
+                    // creating api map
+                    const api = new Api
+                    const apiMap = buildMap(reflection, api)
+
+                    // then we need to configure HttpTrustServer 
+                    // that will receive requests from entrance API
+                    new HttpTrustServer({
+                        apiMap: apiMap,
+                        port: 8080,
+                    })
+                {% endhighlightjs %}   
+                <p><b>node3.ts</b> - Service that will fire event</p>
+                {% highlightjs "typescript" %}
+                    import { buildMap } from "typedapi-server"
+                    import { RedisPublisher } from "typedapi-redis-signaling"
+                    // Reflection generated using typedapi-parse
+                    import { reflection } from "./apiReflection"
+                    // Your Api object
+                    import { Api } from "./Api"
+                    
+                    // creating api map
+                    const api = new Api
+                    const apiMap = buildMap(reflection, api)
+
+                    // Then wee need to configure RedisPublisher that will send events to redis
+                    new RedisPublisher({
+                        apiMap: apiMap,
+                        channel: "my-channel", // name of channel that will be listen to.
+                    })
+
+                    // then we can fire event that will be fired also on intrance api
+                    api.event.fire("hello, world!")
+                {% endhighlightjs %}        
+                <h4 id="errors">Errors handling</h4>                
+                <p>Coming soon</p>
+                <h4 id="decorators">Docorators</h4>
+                <p>Coming soon</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

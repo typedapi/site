@@ -1,0 +1,169 @@
+{% extends "./layout.html" %}
+{% block content %}
+<div class="section no-pad-bot" id="index-banner">
+    <div class="container">
+        <br><br>
+        <h1 class="header center orange-text">Typed API</h1>
+        <div class="row center">
+            <h5 class="header col s12 light">API client-server library for TypeScript projects</h5>
+        </div>
+        <div class="row center">
+            <a href="/getting-started" id="download-button" class="btn-large waves-effect waves-light orange">Get
+                Started</a>
+        </div>
+        <br><br>
+    </div>
+</div>
+
+
+<div class="container">
+    <div class="section">
+
+        <!--   Icon Section   -->
+        <div class="row">
+            <div class="col m12 l4">
+                <div class="icon-block">
+                    <h2 class="center light-blue-text"><i class="material-icons">flash_on</i></h2>
+                    <h5 class="center">Speeds up development</h5>
+
+                    <p class="light">
+                        You describe API like ordinar TypeScript class. 
+                        Interface for Frontend will be generated.<br/>
+                        Then you need only to configure connectors (WebSocket and HTTP available).                        
+                    </p>
+                </div>
+            </div>
+
+            <div class="col m12 l4">
+                <div class="icon-block">
+                    <h2 class="center light-blue-text"><i class="material-icons">settings</i></h2>
+                    <h5 class="center">Easy to work with</h5>
+                    <p class="light">
+                        No need to learn complex configurations, just write code.<br/>
+                        TypedAPI will validate all input data.
+                        You can be sure that string is string, object is object, Date is Date e t.c.                                                
+                    </p>
+                </div>
+            </div>
+
+            <div class="col m12 l4">
+                <div class="icon-block">
+                    <h2 class="center light-blue-text"><i class="material-icons">device_hub</i></h2>
+                    <h5 class="center">Ready for microservices</h5>
+                    <p class="light">
+                        [feature in development]<br/>
+                        In development you create api as monolith.
+                        Then from configuration you can split your API to kubernetes pods and say which method should be called in which pod.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+<div class="container main-code-sample-container">
+    <div class="section">
+        <div class="row">
+            <div class="col s12">
+                <h4>Code sample</h4>
+                <ul class="tabs">
+                    <li class="tab"><a class="active" href="#code-backend">Backend</a></li>
+                    <li class="tab"><a href="#code-frontend">Frontend</a></li>
+                </ul>
+                <div id="code-backend">
+                    <h5>Example how to create API on backend</h5>
+                    {% highlightjs "typescript" %}
+                    // Main api class
+                    export class Api {
+                        books = new BooksApi
+                    }                    
+
+                    // Sample books api class that use some yours repository
+                    export class BooksApi {
+
+                        get(id: number): Promise<BookResult> {
+                            return repository.get(id)
+                        }
+
+                        async create(createBookData: CreateBook): Promise<BookResult> {
+                            const bookResult = await repository.createBook(createBookData)
+                            this.onCreate.fire(bookResult)
+                        }
+
+                        async update(id: number, data: UpdateBook): Promise<void> {
+                            const bookResult = await repository.updateBook(id, data)
+                            this.onUpdate.fire(bookResult)
+                        }
+
+                        async remove(id: number): Promise<void> {
+                            await repository.deleteBook(id)
+                            this.onDelete.fire(id)
+                        } 
+                        
+                        onCreate = new Event<BookResult>()
+                        onUpdate = new Event<BookResult>()
+                        onDelete = new Event<number>()
+                    }
+
+                    // Interfaces of data
+                    export interface BookResult {
+                        id: number
+                        title: string
+                        description: string
+                    }
+
+                    export interface UpdateBook {
+                        title?: string
+                        description?: string
+                    }
+
+                    export interface CreateBook {
+                        title: string
+                        description: string
+                    }                            
+                    {% endhighlightjs %}
+                </div>
+                <div id="code-frontend">
+                    <h5>Auto-generated API interface</h5>
+                    <p>This interface will be generated automatically and will stored in Client application.<br/>
+                        Data interfaces will be also added to generated file.</p>
+                    {% highlightjs "typescript" %} 
+                    interface Api {
+                        books: {
+                            create(book: CreateBook): Promise<BookResult>                            
+                            get(id: number): Promise<BookResult>
+                            update(id: number, data: UpdateBook): Promise<void>
+                            remove(id: number): Promise<void>
+                            onCreate: Event<BookResult>
+                            onUpdate: Event<BookResult>
+                            onDelete: Event<number>                                    
+                        }
+                    } 
+                    {% endhighlightjs %}
+                    
+                    <h5>Frontend code sample</h5>                   
+                    <p>Create book</p>
+                    {% highlightjs "typescript" %}
+                    let book = await api.books.create({title: "title", description: "description"})
+                    {% endhighlightjs %}
+                    <p>Update book</p>
+                    {% highlightjs "typescript" %}
+                    await api.books.update(bookId, {title: "new title"})
+                    {% endhighlightjs %}
+                    <p>Subscribe to Event</p>
+                    {% highlightjs "typescript" %}
+                    let subscription = await api.book.onUpdate.subscribe((book: BookResult) => {
+                        // do some stuff with updated book
+                    })
+                    {% endhighlightjs %}
+                    <p>Unsubscribe from event</p>
+                    {% highlightjs "typescript" %}
+                    await subscription.unsubscribe()
+                    {% endhighlightjs %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<br><br>
+{% endblock %}
