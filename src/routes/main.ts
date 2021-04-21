@@ -12,9 +12,6 @@ const getFromCache = (key: string, builder: { (): string }) => {
     if(!value) {
         value = builder()
         cache.set(key, value, 7200)
-        console.log(key, "new")
-    } else {
-        console.log(key, "from cache")
     }
     return value
 }
