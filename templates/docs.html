@@ -640,9 +640,101 @@
                     api.event.fire("hello, world!")
                 {% endhighlightjs %}        
                 <h4 id="errors">Errors handling</h4>                
-                <p>Coming soon</p>
-                <h4 id="decorators">Docorators</h4>
-                <p>Coming soon</p>
+                <p>
+                    By default, if any error throwed by API method, on client will be throwed 
+                    <a href="https://github.com/typedapi/typedapi/blob/master/core/src/errors.ts">ServerError</a>.
+                    Error data and stack will be passed to log, but client will receive only "Server error" message.
+                </p>
+                <p>
+                    If you want to use your own errors and handle it by client, you should use ObjectProxy 
+                    and add your error to ObjectProxy on server and client. Example:
+                </p>
+                {% highlightjs "typescript" %}
+                    import { ClientError } from "typedapi-core"
+                    // this class should be included to server and client
+                    export class MyCustomError extends ClientError {
+                        constructor(message = "Custom Error") {
+                            super(message)
+                            // we should add that, or instanceof for MyCustomError will be not working correct
+                            Object.setPrototypeOf(this, MyCustomError.prototype)
+                        }
+                    }
+                {% endhighlightjs %}                        
+                <p>Server:</p>
+                {% highlightjs "typescript" %}
+                    import { ObjectProxy } from "typedapi-server"
+                    import { MyCustomError } from "where it is"
+                    // create object proxy
+                    const objectProxy = new ObjectProxy()
+                    // to add errors you should pass hash {[unique error name] => [error class]}.
+                    // here we add { MyCustomError => MyCustomError }
+                    objectProxy.setErrors({ MyCustomError }) 
+                    // then add it to server constructor
+                    new WebSocketServer({
+                        objectProxy: objectProxy,
+                        apiMap: apiMap,
+                        port: 8090
+                    })
+
+                    // then in your API code:
+                    throw new MyCustomError()
+                {% endhighlightjs %}                 
+                <p>Client:</p>       
+                {% highlightjs "typescript" %}
+                    import { ObjectProxy } from "typedapi-client"
+                    import { MyCustomError } from "where it is"
+                    // create object proxy and add error
+                    const objectProxy = new ObjectProxy()
+                    objectProxy.setErrors({ MyCustomError }) 
+
+                    // then add it to createClient factory
+                    const api = createClient({ 
+                        transport,
+                        objectProxy
+                    })
+
+                    // And then you can run your API Methods and catch that error
+                    try {
+                        let result = await api.hello(name)
+                    } catch(err) {
+                        if(err instanceof )
+                    }
+                    
+                {% endhighlightjs %}                   
+                <h4 id="decorators">Decorators</h4>
+                <p>
+                    There is several <a href="https://github.com/typedapi/typedapi/blob/master/server/src/decorators.ts">decorators</a>
+                    that can be added to API methods:
+                </p>
+                <ul class="collection">
+                    <li class="collection-item">
+                        <b>LogConfig</b> - logging configuration decorator. Use it if you method return many data and you dont want to store it in logs<br/>
+                        Receive one parameter:<br/>
+                        true - log all queries with input and output data [default]<br/>
+                        false - no log any queries<br/>
+                        "noData" - log queries but no put data to log<br/>
+                        "inputOnly" - log queries with only input data<br/>
+                        "outputOnly" - log queries with only output data
+                    </li>
+                    <li class="collection-item">
+                        <b>BroadCastEvent</b> - add it decorator for often used events, 
+                        and it will be sent to all users every time, 
+                        and server will not store subscriptions list for that event. No parameters.
+                    </li>
+                    <li class="collection-item">
+                        <b>Access</b> - decorator to set method access. you can pass group name or array of groups who can call that method.
+                    </li>
+                    <li class="collection-item">
+                        <b>NoFilter</b> - No filter decorator is used to made more performance
+                        only if your return has no Date fields and you sure that 
+                        you not send any columns not from response interface
+                    </li>
+                    <li class="collection-item">
+                        <b>FastFilter</b> - used to made more performance
+                        if your return has no Data fields, but you not sure that 
+                        you not send any columns not from response interface
+                    </li>
+                </ul>  
             </div>
         </div>
     </div>
