@@ -13,14 +13,13 @@
                 <ul class="docs-contents">
                     <li><a href="#introduction">Introduction</a></li>
                     <li><a href="#installation">Installation</a></li>
-                    <li><a href="#libraries">Libraries</a></li>
                     <li><a href="#api-class">API Class</a></li>
-                    <li><a href="#methods">Methods</a></li>
+                    <li><a href="#geninterface">Generate interface</a></li>
+                    <li><a href="#websocket-connection">WebSocket connection</a></li>
+                    <li><a href="#http-connection">HTTP connection</a></li>                    
                     <li><a href="#events">Events</a></li>
                     <li><a href="#parametric-events">Parametric events</a></li>                    
-                    <li><a href="#autorization">Authorization</a></li>
-                    <li><a href="#websocket-connection">WebSocket connection</a></li>
-                    <li><a href="#http-connection">HTTP connection</a></li>
+                    <li><a href="#authorization">Authorization</a></li>
                     <li><a href="#api-map">Api map</a></li>
                     <li><a href="#logging">Logging</a></li>
                     <li><a href="#microservices">Using in microservices</a></li>
@@ -464,6 +463,36 @@
                         }
                     }
                 {% endhighlightjs %}                 
+                <p>For getting information about user you can use these injections. Injections will be removed from client`s interface</p>
+                <ul class="collection">
+                    <li class="collection-item">
+                        <b>apiUserId</b> - user id. If parameter not optional,
+                        for not authorized user request will be rejected with "NotAuthorizedError"
+                    </li>
+                    <li class="collection-item">
+                        <b>apiAuthData</b>: AuthData - object with user authorization data:
+                        {% highlightjs "typescript" %}
+                            type AuthData = {
+                                id?: string | number
+                                groups?: string[]
+                                name?: string
+                                email?: string
+                                phone?: string
+                            }                        
+                        {% endhighlightjs %}           
+                    </li>
+                    <li class="collection-item">
+                        <b>apiConnectionData</b>: ConnectionData - object with connection data
+                        {% highlightjs "typescript" %}
+                            type ConnectionData = {
+                                authData: AuthData
+                                ip: string
+                                sessionId?: string
+                                connectionId?: string
+                            }
+                        {% endhighlightjs %}  
+                    </li>
+                </ul>               
                 <h4 id="api-map">Api map</h4>
                 <p>
                     <a href="https://github.com/typedapi/typedapi/blob/master/server/src/ApiMap.ts">Api map</a> 
@@ -697,7 +726,9 @@
                     try {
                         let result = await api.hello(name)
                     } catch(err) {
-                        if(err instanceof )
+                        if(err instanceof MyCustomError) {
+                            // do something with that error
+                        }
                     }
                     
                 {% endhighlightjs %}                   

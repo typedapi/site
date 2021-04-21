@@ -3,6 +3,7 @@ import http from "http"
 import path from "path"
 import { getRootDir } from "./utils"
 import routes from "./routes"
+import { env } from "./env"
 
 const rootPath = getRootDir()
 const app = express()
@@ -15,4 +16,4 @@ let port = parseInt(process.env.PORT || '8779');
 app.set('port', port);
 let server = http.createServer(app)
 server.listen(port);
-console.log(`Server started at http://localhost:${port}`)
+console.log(`Server started at http://localhost:${port}, env: ${env}`)

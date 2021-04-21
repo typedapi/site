@@ -1,11 +1,12 @@
 import { getRootDir } from "./getRootDir"
 import * as nunjucksLib from "nunjucks"
 import hljs from "highlight.js"
+import { env } from "../env"
 
 
 export let nunjucks = nunjucksLib.configure(getRootDir() + "/templates", {
     autoescape: true,
-    watch: true
+    watch: env === "development"
 })
 
 nunjucks.addFilter("nl2br", function (str: string) {
